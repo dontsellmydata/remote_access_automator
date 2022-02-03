@@ -133,7 +133,8 @@ def get_token(apic_password):
             return token
 
     except:
-        print("[-] Error: APIC password is wrong.")
+        nl()
+        print("[-] Error: The APIC password is wrong.")
         return 0
 
 
@@ -144,8 +145,11 @@ def aci():
     APIC_password = get_APIC_password()
     # login to the APIC and get authenticated session cookie.
     token = get_token(APIC_password)
-    if token == 0:
-        aci()
-    else:
-        # post the list of ports to the HPS Customer-Access-EPG.
-        select_ports(token, ports)
+    while True:
+        if token == 0:
+            APIC_password = get_APIC_password()
+            token = get_token(APIC_password)
+        else:
+            break
+    # post the list of ports to the HPS Customer-Access-EPG.
+    select_ports(token, ports)
