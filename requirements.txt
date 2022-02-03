@@ -20,10 +20,8 @@ platformdirs==2.4.1
 prompt-toolkit==3.0.26
 ptyprocess==0.7.0
 pyasn1==0.4.8
-pyasn1-modules==0.2.8
 pyfiglet==0.8.post1
 Pygments==2.11.2
-python-ldap==3.4.0
 requests==2.27.1
 six==1.16.0
 tomli==1.2.3

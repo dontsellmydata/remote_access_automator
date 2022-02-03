@@ -64,13 +64,6 @@ def banner():
 
 def get_args():
 
-    adpass = input(
-        """
-Please enter the AD Server Administrator password:
-
->>> """
-    )
-
     firstname = input(
         """
 The first name of the person requiring access:
@@ -101,6 +94,15 @@ The new COMPLEX password for the person requiring access:
                 and user_password.lower().find(firstname.lower()) == -1
                 and user_password.lower().find(lastname.lower()) == -1
             ):
+
+                adpass = input(
+        """
+Please enter the AD Server Administrator password:
+
+>>> """
+    )
+
+
                 return adpass, firstname, lastname, user_password
             else:
                 print(
@@ -118,10 +120,12 @@ The new COMPLEX password for the person requiring access:
         except:
             sys.exit("[-] ERROR: quitting...")
 
+    
+
 
 def connection(adpassword):
     # connect
-    server = Server("W2K16-SRV.hps.lab", use_ssl=True, get_info=ALL)
+    server = Server("10.52.219.205", use_ssl=True, get_info=ALL)
     connect = Connection(
         server,
         user="HPSLAB\Administrator",
