@@ -12,11 +12,11 @@ from ldap3.extend.microsoft.addMembersToGroups import (
 
 def password_checker(password):
     policy = PasswordPolicy.from_names(
-        length=10,  # min length: 8
-        uppercase=1,  # need min. 2 uppercase letters
-        numbers=1,  # need min. 2 digits
-        special=1,  # need min. 2 special characters
-        nonletters=1,  # need min. 2 non-letter characters (digits, specials, anything)
+        length=10,
+        uppercase=1,
+        numbers=1,
+        special=1,
+        nonletters=1,
     )
     tested_password = policy.test(password)
 
@@ -142,7 +142,7 @@ def connection(adpassword):
 
 
 def create_user():
-    # get input from the user
+    
     args = get_args()
 
     try:
