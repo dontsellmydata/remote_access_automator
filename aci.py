@@ -72,12 +72,12 @@ Please enter the APIC admin password:
 def select_ports(token, ports):
     portList = ports
 
-    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-HighPoint-Customers/ap-Staging/epg-Customer-Access-EPG.json"
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-YourTenant/ap-Staging/epg-Customer-EPG.json"
 
     payload = {
         "fvRsPathAtt": {
             "attributes": {
-                "dn": "uni/tn-HighPoint-Customers/ap-Staging/epg-Customer-Access-EPG/rspathAtt-[topology/pod-1/paths-101/extpaths-101/pathep-[eth1/x]]",
+                "dn": "uni/tn-Your-Tenant/ap-Staging/epg-Customer-EPG/rspathAtt-[topology/pod-1/paths-101/extpaths-101/pathep-[eth1/x]]",
                 "encap": "vlan-2022",
                 "mode": "native",
                 "tDn": "topology/pod-1/paths-101/extpaths-101/pathep-[eth1/x]",
