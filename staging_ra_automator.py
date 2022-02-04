@@ -45,10 +45,13 @@ def menu():
         aci()
         menu()
     elif choice == "0":
+        nl()
         print("Goodbye...")
+        nl()
         sys.exit(0)
     else:
-        print("[-] You must only select either 1 or 2")
+        nl()
+        print("[-] You must only select either 1 or 2. Press 0 to quit.")
         sleep(2)
         nl()
         nl()
@@ -64,25 +67,42 @@ def banner():
 
 def get_args():
 
-    firstname = input(
-        """
-The first name of the person requiring access:
-
->>> """
-    )
-
-    lastname = input(
-        """
-The last name of the person requiring access:
-
->>> """
-    )
-
     while True:
-        try:
+
+
+        while True:
+
+            firstname = input(
+            """
+Enter the first name of the person requiring access:
+
+>>> """
+        )
+            if firstname.isalpha():
+                break
+            else:
+                nl()
+                print("[-] Please enter characters A-Z only.")
+
+        while True:
+
+            lastname = input(
+            """
+Enter the last name of the person requiring access:
+
+>>> """
+        )
+            if lastname.isalpha():
+                break
+            else:
+                nl()
+                print("[-] Please enter characters A-Z only.")
+
+        while True:
+
             user_password = input(
                 """
-The new COMPLEX password for the person requiring access:
+Enter the new COMPLEX password for the person requiring access:
 
 >>> """
             )
@@ -93,20 +113,11 @@ The new COMPLEX password for the person requiring access:
                 checked_password == []
                 and user_password.lower().find(firstname.lower()) == -1
                 and user_password.lower().find(lastname.lower()) == -1
-            ):
-
-                adpass = input(
-        """
-Please enter the AD Server Administrator password:
-
->>> """
-    )
-
-
-                return adpass, firstname, lastname, user_password
+                ):
+                break
             else:
-                print(
-                    """
+                nl()
+                print("""
 [-] ERROR: Password must be:
 
 [-] Longer than 10 characters
@@ -114,13 +125,41 @@ Please enter the AD Server Administrator password:
 [-] Contain at least 1 number
 [-] Contain at least 1 special character
 [-] NOT contain the users first or last name
+            """)
+
+        ad_password = input(
             """
-                )
+Enter the AD server password:
 
-        except:
-            sys.exit("[-] ERROR: quitting...")
+>>> """)
+        
+        while True:
+            nl()
+            verification = input(f"""Is this following information correct? Y/N
 
-    
+[+] first name: {firstname}
+[+] last name: {lastname}
+[+] user password: {user_password}
+[+] AD server password: {ad_password}
+
+>>> """)
+        
+            if verification == "Y":
+                return ad_password, firstname, lastname, user_password
+            elif verification == "N":
+                break
+            elif verification == "0":
+                nl()
+                print("Goodbye...")
+                nl()
+                sys.exit(0)
+            else:
+                nl()
+                print('[-] Please enter "Y" or "N" or "0" to quit')
+                sleep(2)
+                continue
+  
+
 
 
 def connection(adpassword):

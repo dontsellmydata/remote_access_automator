@@ -27,22 +27,34 @@ Please enter the FEX switch port numbers of where you have patched in devices:
             for x in ports:
                 if x in range(1, 49):
                     port_list.append(x)
+
                 elif x == 0:
-                    port_list = 0
+                    port_list =0
                     sys.exit(1)
+                    
                 else:
                     sys.exit(1)
 
-            return port_list
-        except:
-            if port_list == 0:
-                print("\n[-] Goodbye...\n")
-                sys.exit(0)
+            if port_list == []:
+                sys.exit(1)
             else:
-                print(
-                    "\n[-] ERROR: Please enter port numbers between 1 and 48 or enter 0 to quit.\n"
-                )
+                return port_list
 
+        except:
+
+            if port_list == 0:
+                nl()
+                print("Goodbye...")
+                nl()
+                sys.exit(0)
+
+            else:
+                nl()
+                print("[-] Please enter port numbers between 1 and 48 or enter 0 to quit.")
+
+
+
+        
 
 def get_APIC_password():
     password = input(
