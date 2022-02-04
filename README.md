@@ -8,7 +8,7 @@ Features:
 * Create .txt file containing VPN connection details to send to the user.
 * Enable ports on the ACI FEX switch linked to the customer staging bridge domain.
 
-![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/ads.gif "Adding AD user")
+![](ads.gif)
 
 ![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/aci.gif "Enabling Ports in ACI")
 
