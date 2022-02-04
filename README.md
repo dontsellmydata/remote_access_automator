@@ -12,8 +12,6 @@ Features:
 
 ![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/aci.gif "Enabling Ports in ACI")
 
-![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/template_demo_clean.jpg "Example email template")
-
 
 Notes:
 
