@@ -6,7 +6,7 @@ import pwinput
 from staging_ra_automator import nl
 from time import sleep
 
-APIC_ADDRESS = "192.168.104.10"
+APIC_ADDRESS = " "
 
 
 def get_ports():

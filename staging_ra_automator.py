@@ -164,7 +164,7 @@ Enter the AD server password:
 
 def connection(adpassword):
     # connect
-    server = Server("10.52.219.205", use_ssl=True, get_info=ALL)
+    server = Server("127.0.0.1", use_ssl=True, get_info=ALL)
     connect = Connection(
         server,
         user="HPSLAB\Administrator",
@@ -293,13 +293,13 @@ Your VPN Credentials are:
 
 {user_sAM_account_name} / {user_password}
  
-Please navigate to the HighPoint Solutions GlobalProtect Portal at https://81.145.50.51
+Please navigate to the GlobalProtect Portal at https://URL
 
 You will be prompted to login with your username and password to then download and install the correct version of the Palo Alto GlobalProtect VPN client for your OS.
  
 Once you’ve done that you can then login with the same credentials.
  
-It’s a split tunnel VPN so only traffic destined for 192.168.200.0/24 will go through the tunnel.
+It’s a split tunnel VPN so only traffic destined for 192.168.0.0/24 will go through the tunnel.
  
 If you have any issues connecting please let me know.
  
