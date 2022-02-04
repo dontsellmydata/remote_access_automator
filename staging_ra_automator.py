@@ -189,7 +189,7 @@ def create_user():
         if connected == 0:
             nl()
             print(
-                "[-] Failed to connect to AD Server.\n[-] Check the password.\n[-] Are you connected to the HPSLAB Wireless or CATO VPN?"
+                "[-] Failed to connect to AD Server.\n[-] Check the password.\n[-]"
             )
             nl()
             print("[-] Taking you back to the main menu...")
@@ -200,11 +200,11 @@ def create_user():
         sys.exit("[-] ERROR: quitting...")
 
     # creating the new users distinguised name
-    userdn = "cn={},cn=Users,dc=hps,dc=lab".format(
+    userdn = "cn={},cn= ".format(
         args[1].capitalize() + " " + args[2].capitalize()
     )
     # location of the restricted Global Protect Palo VPN group
-    customer_access_groupdn = "cn=GlobalProtect-Customer-Access,cn=Users,dc=hps,dc=lab"
+    customer_access_groupdn = " "
     # create account name using first and last name
     sAMAccountName = args[1][0].lower() + args[2].lower()
     try:
@@ -213,7 +213,7 @@ def create_user():
             attributes={
                 "objectClass": ["organizationalPerson", "person", "top", "user"],
                 "sAMAccountName": sAMAccountName,
-                "userPrincipalName": sAMAccountName + "@hps.lab",
+                "userPrincipalName": sAMAccountName + "@domain.com",
                 "displayName": args[1].capitalize() + " " + args[2].capitalize(),
             },
         )
