@@ -2,6 +2,7 @@
 import requests
 import json
 import sys
+import pwinput
 from staging_ra_automator import nl
 from time import sleep
 
@@ -29,9 +30,9 @@ Please enter the FEX switch port numbers of where you have patched in devices:
                     port_list.append(x)
 
                 elif x == 0:
-                    port_list =0
+                    port_list = 0
                     sys.exit(1)
-                    
+
                 else:
                     sys.exit(1)
 
@@ -50,19 +51,21 @@ Please enter the FEX switch port numbers of where you have patched in devices:
 
             else:
                 nl()
-                print("[-] Please enter port numbers between 1 and 48 or enter 0 to quit.")
+                print(
+                    "[-] Please enter port numbers between 1 and 48 or enter 0 to quit."
+                )
 
-
-
-        
 
 def get_APIC_password():
-    password = input(
-        """
+    password = pwinput.pwinput(
+        prompt="""
+        
 Please enter the APIC admin password: 
     
->>> """
+>>> """,
+        mask="*",
     )
+
     return password
 
 
@@ -114,7 +117,7 @@ def select_ports(token, ports):
         else:
             nl()
             print(f"[-] Error enabling port eth1/{str(port)}")
-    nl()        
+    nl()
     print("[+] Taking you back to the main menu...")
     sleep(3)
 

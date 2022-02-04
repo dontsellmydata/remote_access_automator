@@ -19,6 +19,7 @@ pip-autoremove==0.10.0
 platformdirs==2.4.1
 prompt-toolkit==3.0.26
 ptyprocess==0.7.0
+pwinput==1.0.2
 pyasn1==0.4.8
 pyfiglet==0.8.post1
 Pygments==2.11.2

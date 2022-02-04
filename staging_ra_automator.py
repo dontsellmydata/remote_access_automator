@@ -1,5 +1,6 @@
 #!/usr/bin/env/python3
 import pyfiglet
+import pwinput
 import sys
 from aci import *
 from time import sleep
@@ -127,11 +128,11 @@ Enter the new COMPLEX password for the person requiring access:
 [-] NOT contain the users first or last name
             """)
 
-        ad_password = input(
-            """
+        ad_password = pwinput.pwinput(prompt="""
+
 Enter the AD server password:
 
->>> """)
+>>> """, mask='*')
         
         while True:
             nl()
@@ -140,7 +141,6 @@ Enter the AD server password:
 [+] first name: {firstname}
 [+] last name: {lastname}
 [+] user password: {user_password}
-[+] AD server password: {ad_password}
 
 >>> """)
         

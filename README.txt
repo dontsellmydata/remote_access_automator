@@ -1,6 +1,6 @@
 Purpose:
 
-This script is designed to to automate the process of giving access to devices in staging to a remote engineer.
+This script is designed to automate the process of giving access to devices in staging to a remote engineer.
 
 Features:
 
