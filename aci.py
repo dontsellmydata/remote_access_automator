@@ -2,103 +2,327 @@
 import requests
 import json
 import sys
-import pwinput
-from staging_ra_automator import nl
-from time import sleep
-
-APIC_ADDRESS = " "
+from main import nl, connection, group_search, prRed
 
 
-def get_ports():
-
-    while True:
-
-        try:
-            port_list = []
-            ports = [
-                int(port)
-                for port in input(
-                    """
-Please enter the FEX switch port numbers of where you have patched in devices:
-
->>> """
-                ).split()
-            ]
-
-            for x in ports:
-                if x in range(1, 49):
-                    port_list.append(x)
-
-                elif x == 0:
-                    port_list = 0
-                    sys.exit(1)
-
-                else:
-                    sys.exit(1)
-
-            if port_list == []:
-                sys.exit(1)
-            else:
-                return port_list
-
-        except:
-
-            if port_list == 0:
-                nl()
-                print("Goodbye...")
-                nl()
-                sys.exit(0)
-
-            else:
-                nl()
-                print(
-                    "[-] Please enter port numbers between 1 and 48 or enter 0 to quit."
-                )
+APIC_ADDRESS = ""
+APIC_PASSWORD = ""
 
 
-def get_APIC_password():
-    password = pwinput.pwinput(
-        prompt="""
-        
-Please enter the APIC admin password: 
-    
->>> """,
-        mask="*",
+def get_bd(token, name):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/BD-{name}.json?query-target=children&target-subtree-class=fvSubnet"
+
+    response = requests.get(uri, headers=headers, verify=False).json()
+
+    ips = []
+    for x in response["imdata"]:
+        ips.append(x["fvSubnet"]["attributes"]["ip"])
+
+    if ips:
+        return ips
+    else:
+        prRed(f"[-][APIC] Error getting configured gateways for {name} BD.")
+
+
+def get_endpoints(name):
+    token = get_token()
+    original_name = name.rsplit("-", 2)[0]
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/ap-Staging/epg-{original_name}.json?query-target=children&target-subtree-class=fvCEp&rsp-subtree=children&rsp-subtree-class=fvRsToVm,fvRsVm,fvRsHyper,fvRsCEpToPathEp"
+
+    response = requests.get(uri, headers=headers, verify=False).json()
+
+    ip = []
+    mac = []
+    port = []
+    for x in response["imdata"]:
+        ip.append(x["fvCEp"]["attributes"]["ip"])
+        mac.append(x["fvCEp"]["attributes"]["mac"])
+        attached_port = x["fvCEp"]["children"][0]["fvRsCEpToPathEp"]["attributes"][
+            "tDn"
+        ].rsplit("[", 1)
+        port.append(attached_port[1][:-1])
+    return ip, mac, port
+
+
+def create_bd(token, name, gateways):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = (
+        f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/BD-{name}.json"
     )
 
-    return password
+    payload = {
+        "fvBD": {
+            "attributes": {
+                "dn": f"uni/tn-lab-Customers/BD-{name}",
+                "mac": "00:22:BD:F8:19:FF",
+                "arpFlood": "true",
+                "name": name,
+                "descr": "created by staging-automator",
+                "rn": f"BD-{name}",
+                "status": "created",
+            },
+            "children": [
+                {
+                    "dhcpLbl": {
+                        "attributes": {
+                            "dn": f"uni/tn-lab-Customers/BD-{name}/dhcplbl-Staging-DHCP",
+                            "owner": "tenant",
+                            "name": "Staging-DHCP",
+                            "rn": "dhcplbl-Staging-DHCP",
+                            "status": "created",
+                        },
+                        "children": [],
+                    }
+                },
+                {
+                    "fvRsCtx": {
+                        "attributes": {
+                            "tnFvCtxName": "Customer-Staging",
+                            "status": "created,modified",
+                        },
+                        "children": [],
+                    }
+                },
+                {
+                    "fvRsBDToOut": {
+                        "attributes": {
+                            "tnL3extOutName": "GG-to-outside-Palo-L3Out",
+                            "status": "created",
+                        },
+                        "children": [],
+                    }
+                },
+            ],
+        }
+    }
+    # for each gateway insert it into the payload at a certain index
+    i = 1
+    for ip in gateways:
+
+        payload["fvBD"]["children"].insert(
+            i,
+            {
+                "fvSubnet": {
+                    "attributes": {
+                        "dn": f"uni/tn-lab-Customers/BD-{name}/subnet-[{ip}]",
+                        "ctrl": "",
+                        "ip": ip,
+                        "scope": "public",
+                        "rn": f"subnet-[{ip}]",
+                        "status": "created",
+                    },
+                    "children": [],
+                }
+            },
+        )
+
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] {name} Bridge Domain created successfully.")
+    else:
+        prRed(f"[-][APIC] Error creating {name} Bridge Domain.")
+        sys.exit(1)
 
 
-def select_ports(token, ports):
-    portList = ports
+def delete_bd(token, name):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
 
-    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-YourTenant/ap-Staging/epg-Customer-EPG.json"
+    uri = (
+        f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/BD-{name}.json"
+    )
 
     payload = {
-        "fvRsPathAtt": {
+        "fvBD": {
             "attributes": {
-                "dn": "uni/tn-Your-Tenant/ap-Staging/epg-Customer-EPG/rspathAtt-[topology/pod-1/paths-101/extpaths-101/pathep-[eth1/x]]",
-                "encap": "vlan-2022",
-                "mode": "native",
-                "tDn": "topology/pod-1/paths-101/extpaths-101/pathep-[eth1/x]",
-                "rn": "rspathAtt-[topology/pod-1/paths-101/extpaths-101/pathep-[eth1/x]]",
-                "status": "created",
+                "dn": f"uni/tn-lab-Customers/BD-{name}",
+                "status": "deleted",
             },
             "children": [],
         }
     }
 
-    dn = payload["fvRsPathAtt"]["attributes"]["dn"]
-    rn = payload["fvRsPathAtt"]["attributes"]["rn"]
-    tDn = payload["fvRsPathAtt"]["attributes"]["tDn"]
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
 
-    for port in portList:
-        new_dn = dn.replace("eth1/x", "eth1/{}").format(port)
-        new_rn = rn.replace("eth1/x", "eth1/{}").format(port)
-        new_tDn = tDn.replace("eth1/x", "eth1/{}").format(port)
-        payload["fvRsPathAtt"]["attributes"]["dn"] = new_dn
-        payload["fvRsPathAtt"]["attributes"]["rn"] = new_rn
-        payload["fvRsPathAtt"]["attributes"]["tDn"] = new_tDn
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] {name} Bridge Domain deleted successfully.")
+    else:
+        prRed(f"[-][APIC] Error deleting {name} Bridge Domain.")
+
+
+def create_epg(token, name):
+
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/ap-Staging/epg-{name}.json"
+
+    payload = {
+        "fvAEPg": {
+            "attributes": {
+                "dn": f"uni/tn-lab-Customers/ap-Staging/epg-{name}",
+                "prio": "level3",
+                "name": name,
+                "descr": "Created by staging-automator",
+                "rn": f"epg-{name}",
+                "status": "created",
+            },
+            "children": [
+                {
+                    "fvRsBd": {
+                        "attributes": {
+                            "tnFvBDName": name,
+                            "status": "created,modified",
+                        },
+                        "children": [],
+                    }
+                }
+            ],
+        }
+    }
+
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] {name} EPG created successfully.")
+        add_contracts(token, name)
+        add_pdom(token, name)
+    else:
+        prRed(f"[-][APIC] Error creating {name} EPG.")
+        sys.exit(1)
+
+
+def delete_epg(token, name):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/ap-Staging/epg-{name}.json"
+
+    payload = {
+        "fvAEPg": {
+            "attributes": {
+                "dn": f"uni/tn-lab-Customers/ap-Staging/epg-{name}",
+                "status": "deleted",
+            },
+            "children": [],
+        }
+    }
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] {name} EPG deleted successfully.")
+
+    else:
+        prRed(f"[-][APIC] Error deleting {name} EPG.")
+
+
+def add_contracts(token, name):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/ap-Staging/epg-{name}.json"
+
+    payload = {
+        "fvRsCons": {
+            "attributes": {
+                "tnVzBrCPName": "Allow-Everything",
+                "status": "created,modified",
+            },
+            "children": [],
+        }
+    }
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] Contracts added to {name} EPG successfully.")
+    else:
+        prRed(f"[-][APIC] Error adding contracts to {name} EPG.")
+        sys.exit(1)
+
+
+def add_pdom(token, name):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/ap-Staging/epg-{name}.json"
+
+    payload = {
+        "fvRsDomAtt": {
+            "attributes": {
+                "resImedcy": "immediate",
+                "tDn": "uni/phys-GG-Staging-PDOM",
+                "status": "created",
+            },
+            "children": [],
+        }
+    }
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+
+    if response["totalCount"] == "0":
+        print(
+            f"[+][APIC] Physical Domain association added to {name} EPG successfully."
+        )
+    else:
+        prRed(f"[-][APIC] Error adding Physical Domain association to {name} EPG.")
+        sys.exit(1)
+
+
+def select_ports(token, name, ports):
+    connected = connection()
+    groups = group_search(connected)
+    vlan_encap = 2701
+    if groups == 0:
+        vlan_encap = 2701
+    else:
+        active_groups = len(groups)
+        vlan_encap = vlan_encap + active_groups
+
+    # replacing EPG name with variable
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/tn-lab-Customers/ap-Staging/epg-{name}.json"
+    # iterate port list and insert variables
+    for port in ports:
+        payload = {
+            "fvRsPathAtt": {
+                "attributes": {
+                    "dn": f"uni/tn-lab-Customers/ap-Staging/epg-{name}/rspathAtt-[topology/pod-1/paths-101/extpaths-101/pathep-[eth1/{port}]]",
+                    "encap": f"vlan-{str(vlan_encap)}",
+                    "mode": "native",
+                    "tDn": f"topology/pod-1/paths-101/extpaths-101/pathep-[eth1/{port}]",
+                    "rn": f"rspathAtt-[topology/pod-1/paths-101/extpaths-101/pathep-[eth1/{port}]]",
+                    "status": "created",
+                },
+                "children": [],
+            }
+        }
 
         headers = {
             "Cookie": f"APIC-Cookie={token}",
@@ -112,25 +336,114 @@ def select_ports(token, ports):
         ).json()
 
         if response["totalCount"] == "0":
-            nl()
-            print(f"[+] Port eth1/{str(port)} enabled successfully!")
+            print(f"[+][APIC] FEX Port eth1/{str(port)} enabled successfully.")
         else:
-            nl()
-            print(f"[-] Error enabling port eth1/{str(port)}")
-    nl()
-    print("[+] Taking you back to the main menu...")
-    sleep(3)
+            prRed(f"[-][APIC] Error enabling port eth1/{str(port)}")
 
 
-def get_token(apic_password):
-    apic_user = "admin"
-    apic_password = apic_password
+def create_FEX_interface_selector(token, name, ports):
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/infra/fexprof-FEX101-Profile/hports-{name}-typ-range.json"
+    # the initial payload
+    payload = {
+        "infraHPortS": {
+            "attributes": {
+                "dn": f"uni/infra/fexprof-FEX101-Profile/hports-{name}-typ-range",
+                "name": name,
+                "descr": "created by staging-automator",
+                "rn": f"hports-{name}-typ-range",
+                "status": "created,modified",
+            },
+            "children": [],
+        }
+    }
+    # appending child entries to the intial payload depending on the number of ports requested.
+    i = 2
+    for port in ports:
+        port_block = "block" + str(i)
+        payload["infraHPortS"]["children"].append(
+            {
+                "infraPortBlk": {
+                    "attributes": {
+                        "dn": f"uni/infra/fexprof-FEX101-Profile/hports-{name}-typ-range/portblk-{port_block}",
+                        "fromPort": port,
+                        "toPort": port,
+                        "name": port_block,
+                        "rn": f"portblk-{port_block}",
+                        "status": "created,modified",
+                    },
+                    "children": [],
+                }
+            }
+        )
+        i += 1
+    # appending the policy group to complete the payload
+    payload["infraHPortS"]["children"].append(
+        {
+            "infraRsAccBaseGrp": {
+                "attributes": {
+                    "tDn": "uni/infra/funcprof/accportgrp-GG-Staging-Policy-Group",
+                    "status": "created,modified",
+                },
+                "children": [],
+            }
+        }
+    )
+
+    # sending the payload to the APIC
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+    session = requests.Session()
+    requests.packages.urllib3.disable_warnings()
+    response = session.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] Interface Selectors created successfully.")
+    else:
+        prRed(
+            f"[-][APIC] Error enabling Interface Selectors... are the ports you've chosen already in use?"
+        )
+        sys.exit(1)
+
+
+def delete_FEX_interface_selector(token, name):
+    headers = {
+        "Cookie": f"APIC-Cookie={token}",
+    }
+
+    uri = f"https://{APIC_ADDRESS}/api/node/mo/uni/infra/fexprof-FEX101-Profile/hports-{name}-typ-range.json"
+
+    payload = {
+        "infraHPortS": {
+            "attributes": {
+                "dn": f"uni/infra/fexprof-FEX101-Profile/hports-{name}-typ-range",
+                "status": "deleted",
+            },
+            "children": [],
+        }
+    }
+
+    response = requests.post(
+        uri, data=json.dumps(payload), headers=headers, verify=False
+    ).json()
+
+    if response["totalCount"] == "0":
+        print(f"[+][APIC] {name} interface selectors deleted successfully.")
+
+    else:
+        prRed(f"[-][APIC] Error deleting {name} interface selectors.")
+
+
+def get_token():
+    apic_user = ""
 
     headers = {"content-type": "application/json", "cache-control": "no-cache"}
 
-    uri = "https://{0}/api/aaaLogin.json".format(APIC_ADDRESS)
+    uri = f"https://{APIC_ADDRESS}/api/aaaLogin.json"
 
-    payload = {"aaaUser": {"attributes": {"name": apic_user, "pwd": apic_password}}}
+    payload = {"aaaUser": {"attributes": {"name": apic_user, "pwd": APIC_PASSWORD}}}
 
     session = requests.Session()
 
@@ -149,22 +462,22 @@ def get_token(apic_password):
 
     except:
         nl()
-        print("[-] Error: The APIC password is wrong.")
-        return 0
+        prRed("[-][APIC] Error: The APIC password is wrong.")
+        sys.exit(1)
 
 
-def aci():
-    # get list of ports the engineer has patched devices into on the FEX switch.
-    ports = get_ports()
-    # get the APIC admin password.
-    APIC_password = get_APIC_password()
-    # login to the APIC and get authenticated session cookie.
-    token = get_token(APIC_password)
-    while True:
-        if token == 0:
-            APIC_password = get_APIC_password()
-            token = get_token(APIC_password)
-        else:
-            break
-    # post the list of ports to the HPS Customer-Access-EPG.
-    select_ports(token, ports)
+def delete_aci(name):
+    token = get_token()
+    gateways = get_bd(token, name)
+    delete_bd(token, name)
+    delete_epg(token, name)
+    delete_FEX_interface_selector(token, name)
+    return gateways
+
+
+def aci(data):
+    token = get_token()
+    create_FEX_interface_selector(token, data[0], data[2])
+    create_bd(token, data[0], data[1])
+    create_epg(token, data[0])
+    select_ports(token, data[0], data[2])

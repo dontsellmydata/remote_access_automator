@@ -1,22 +1,34 @@
-Purpose:
-
-This script is designed to automate the process of giving access to devices in staging to a remote engineer.
-
-Features:
-
-* Create Active Directory user and add to the restricted VPN group.
-* Create .txt file containing VPN connection details to send to the user.
-* Enable ports on the ACI FEX switch linked to the customer staging bridge domain.
-
-![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/activedirectory.gif "Adding AD user")
-
-![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/aci.gif "Enabling Ports in ACI")
-
-![alt text](https://github.com/dontsellmydata/remote_access_automator/blob/master/template_demo_clean.jpg "Example email template")
+1. Connect the devices you want to enable for remote access to the lab FEX switch.
+2. Edit 'data.csv' to include Company name, default gateway(s), ports and user(s).
+3. Run the script (option 3 in the script menu).
+4. Check for remote user login statistics and discovered devices (option 1 in the script menu).
+5. Delete script configuration after staging has been completed (option 2 in the script).
 
 
-Install instructions:
 
-* Navigate to folder path in terminal containing staging_ra_automator.py
-* pip3 install -r requirements.txt
-* python3 staging_ra_automator.py
+Script Install and run instructions:
+
+Windows:
+
+* Open terminal
+* Install python3 by typing: python3 (download from windows app store)
+* Once installed browse to the folder in terminal containing 'main.py' 'aci.py' 'palo.py' and 'requirements.txt'
+* Upgrade pip:
+    * pip3 install --upgrade pip
+* Install the script requirements:
+    * pip3 install -r requirements.txt
+* Run the script:
+    * python3 main.py
+
+Mac/Linux:
+
+* Open terminal
+* Check if python3 is installed:
+    * which python3
+* If not installed, download and install from python.org
+* Upgrade pip:
+    * pip3 install --upgrade pip
+* Install the script requirements:
+    * pip3 install -r requirements.txt
+* Run the script:
+    * python3 main.py
