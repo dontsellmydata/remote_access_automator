@@ -5,6 +5,7 @@
 5. Check for remote user login statistics and discovered devices (option 1 in the script menu).
 6. Delete script configuration after staging has been completed (option 2 in the script).
 
+![](create.gif)
 
 
 Script Install and run instructions:
