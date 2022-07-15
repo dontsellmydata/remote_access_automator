@@ -1,9 +1,10 @@
 1. Connect the devices you want to enable for remote access to the lab FEX switch.
 2. Edit 'data.csv' to include Company name, default gateway(s), ports and user(s).
-3. Run the script (option 3 in the script menu).
-4. Check your local directory for generated email template containing remote user logon instructions.
-5. Check for remote user login statistics and discovered devices (option 1 in the script menu).
-6. Delete script configuration after staging has been completed (option 2 in the script).
+3. Run the script with python3 main.py
+4. Select option 3 to create users do all the networking/firewall configuration.
+5. Check your local directory for generated email template containing remote user logon instructions.
+7. Check for remote user login statistics and discovered devices (option 1 in the script menu).
+7. Delete script configuration after staging has been completed (option 2 in the script).
 
 ![](create.gif)
 
