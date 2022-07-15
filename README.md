@@ -7,6 +7,7 @@
 
 ![](create.gif)
 
+![](output.gif)
 
 Script Install and run instructions:
 
